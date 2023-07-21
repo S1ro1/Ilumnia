@@ -40,8 +40,11 @@ impl<'a> Lexer<'a> {
             self.tmp_buffer.push(current_char);
             self.position += 1;
             current_char = self.source.chars().nth(self.position).unwrap();
-        }
 
+            if !current_char.is_alphanumeric() {
+                self.position -= 1;
+            }
+        }
         let token = Token::new(TokenType::Number, self.tmp_buffer.clone());
         self.tmp_buffer.clear();
 

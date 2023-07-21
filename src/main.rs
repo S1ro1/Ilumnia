@@ -4,15 +4,18 @@ mod compiler;
 
 use std::error::Error;
 
-use compiler::lexer::Lexer;
+use compiler::{lexer::Lexer, parser::{Parser, ParseError}};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let input = std::fs::read_to_string("test.ilu")?;
+fn main() -> Result<(), ParseError> {
+    let input = std::fs::read_to_string("test.ilu").unwrap();
     let mut lexer = Lexer::new(&input);
 
     let tokens = lexer.lex();
 
-    println!("{:?}", tokens);
+    for token in &tokens {
+        println!("{:?}", token);
+    }
 
-    Ok(())
+    let mut parser = Parser::new(tokens);
+    parser.parse()
 }

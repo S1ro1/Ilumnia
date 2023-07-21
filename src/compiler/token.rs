@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
     // types
     String,
@@ -20,10 +20,10 @@ pub enum TokenType {
     Asterisk,
     Slash,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
-    token_type: TokenType,
-    value: String,
+    pub token_type: TokenType,
+    pub value: String,
 }
 
 impl Token {

@@ -1,0 +1,9 @@
+Program -> StatementList .
+
+StatementList -> Statement StatementList .
+StatementList -> .
+
+Statement -> Assign ; .
+Statement -> Exp ; .
+
+Assign -> 'let' value '=' value
