@@ -8,16 +8,16 @@ pub struct ParseError {
 }
 
 impl ParseError {
-    pub fn new(expected: TokenType) -> ParseError {
+    pub fn new(expected: TokenType, gotten: TokenType) -> ParseError {
         ParseError {
-            msg: format!("Expected token: {:?}", expected),
+            msg: format!("Expected token: {:?} -> Gotten: {:?}", expected, gotten),
         }
     }
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Expected token: {:?}", self.msg)
+        write!(f, "{:?}", self.msg)
     }
 }
 
@@ -56,7 +56,7 @@ impl Parser {
                 TokenType::Let => {
                     self.parse_assignment()?;
                 }
-                _ => Err(ParseError::new(TokenType::RParen))?,
+                _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid))?,
             }
         }
 
@@ -65,14 +65,14 @@ impl Parser {
 
     fn expect_with_type(&mut self, token_type: TokenType) -> Result<Token, ParseError> {
         if self.position >= self.tokens.len() {
-            return Err(ParseError::new(token_type));
+            return Err(ParseError::new(token_type, TokenType::EOF));
         } else {
             let token = self.tokens[self.position].clone();
             if token.token_type == token_type {
                 self.position += 1;
                 return Ok(token);
             } else {
-                return Err(ParseError::new(token_type));
+                return Err(ParseError::new(token_type, token.token_type));
             }
         }
     }

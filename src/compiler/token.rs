@@ -19,6 +19,9 @@ pub enum TokenType {
     Plus,
     Asterisk,
     Slash,
+    //
+    EOF,
+    Invalid,
 }
 #[derive(Debug, Clone)]
 pub struct Token {
