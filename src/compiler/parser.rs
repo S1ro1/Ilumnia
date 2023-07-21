@@ -1,11 +1,15 @@
 use std::fmt;
 
+use super::ast::{self, Expression, ExpressionType};
 use super::token::{Token, TokenType};
 
 #[derive(Debug, Clone)]
 pub struct ParseError {
     pub msg: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct HmmgeError;
 
 impl ParseError {
     pub fn new(expected: TokenType, gotten: TokenType) -> ParseError {
@@ -18,6 +22,12 @@ impl ParseError {
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.msg)
+    }
+}
+
+impl fmt::Display for HmmgeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "HmmgeError")
     }
 }
 
@@ -36,17 +46,64 @@ impl Parser {
 }
 
 impl Parser {
-    fn parse_assignment(&mut self) -> Result<(), ParseError> {
-        let let_token = self.expect_with_type(TokenType::Let)?;
+    fn peek_token(&self) -> Token {
+        if self.position + 1 >= self.tokens.len() {
+            return Token::new(TokenType::EOF, String::new());
+        }
+        self.tokens[self.position + 1].clone()
+    }
+
+    fn is_operator(&self, token: Token) -> bool {
+        match token.token_type {
+            TokenType::Plus => true,
+            TokenType::Minus => true,
+            TokenType::Asterisk => true,
+            TokenType::Slash => true,
+            _ => false,
+        }
+    }
+
+    fn is_literal(&self, token: Token) -> bool {
+        match token.token_type {
+            TokenType::Number => true,
+            TokenType::String => true,
+            _ => false,
+        }
+    }
+
+    fn parse_expression(&mut self) -> Option<ast::Expression> {
+        let mut current_token = self.tokens[self.position].clone();
+
+        if self.is_operator(self.peek_token()) {
+            return Some(Expression {
+                expression_type: ExpressionType::Binary(
+                    Box::new(Expression {
+                        expression_type: ExpressionType::Literal(current_token.value),
+                    }),
+                    Box::new(self.parse_expression()?),
+                ),
+            });
+        } else {
+            return Some(Expression {
+                expression_type: ExpressionType::Literal(current_token.value),
+            });
+        }
+    }
+
+    fn parse_assignment(&mut self) -> Result<ast::Assignment, ParseError> {
+        let _ = self.expect_with_type(TokenType::Let)?;
         let identif_token = self.expect_with_type(TokenType::Identif)?;
-        let assign_token = self.expect_with_type(TokenType::Assign)?;
-        let number_token = self.expect_with_type(TokenType::Number)?;
-        let semicolon_token = self.expect_with_type(TokenType::Semicolon)?;
+        let _ = self.expect_with_type(TokenType::Assign)?;
 
-        println!("let_token: {:?}", let_token);
-        println!("identif_token: {:?}", identif_token);
+        let expression = self.parse_expression();
 
-        Ok(())
+        match expression {
+            Some(expression) => Ok(ast::Assignment {
+                identif: identif_token.value,
+                value: expression,
+            }),
+            None => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid))?,
+        }
     }
 
     pub fn parse(&mut self) -> Result<(), ParseError> {
@@ -54,7 +111,7 @@ impl Parser {
             let token = self.tokens[self.position].clone();
             match token.token_type {
                 TokenType::Let => {
-                    self.parse_assignment()?;
+                    dbg!(self.parse_assignment()?);
                 }
                 _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid))?,
             }
