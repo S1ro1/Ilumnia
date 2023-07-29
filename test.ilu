@@ -1,5 +1,5 @@
-let x = 2;
-x = 2 + 4;
-let y = x + 3;
-print(y);
-print(x);
+func add(x, y) {
+    return x + 7;
+}
+
+print(add(3, 4));

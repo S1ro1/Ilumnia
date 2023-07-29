@@ -45,7 +45,7 @@ impl Evaluator {
     }
 
     fn evaluate_statement(&mut self, statement: &Statement) {
-        match statement.statement_type {
+        match &statement.statement_type {
             ast::StatementType::Declaration(ref declaration) => {
                 let value = self.evaluate_expression(&declaration.value);
                 self.variable_stack
@@ -67,12 +67,15 @@ impl Evaluator {
                     ValueType::String(value) => println!("{}", value),
                 }
             }
+            ast::StatementType::FunctionDeclaration(name, _, _) => {
+                self.functions.insert(name.clone(), statement.clone());
+            }
             _ => {}
         }
     }
 
     fn evaluate_expression(&mut self, expr: &Expression) -> Value {
-        match expr.expression_type {
+        match &expr.expression_type {
             ast::ExpressionType::Literal(ref literal) => match literal.parse::<i64>() {
                 Ok(integer) => Value::new(ValueType::Integer(integer)),
                 Err(_) => Value::new(ValueType::String(literal.clone())),
@@ -117,7 +120,53 @@ impl Evaluator {
                     _ => panic!("Cannot evaluate expression"),
                 }
             }
+            ast::ExpressionType::FunctionCall(name, args) => {
+                let function = self.functions.get(name).unwrap();
+                let params = match function.statement_type {
+                    ast::StatementType::FunctionDeclaration(_, ref params, _) => params.clone(),
+                    _ => panic!("Cannot evaluate expression"),
+                };
+
+                self.evaluate_function_call(name.clone(), params, *args.clone())
+            }
             _ => panic!("Cannot evaluate expression"),
         }
+    }
+
+    fn evaluate_function_call(
+        &mut self,
+        name: String,
+        params: Vec<String>,
+        args: Vec<Expression>,
+    ) -> Value {
+        let body = match self.functions.get(&name).unwrap().statement_type {
+            ast::StatementType::FunctionDeclaration(_, _, ref body) => body.clone(),
+            _ => panic!("Cannot evaluate expression"),
+        };
+        let mut variable_stack = HashMap::new();
+        for (param, arg) in params.iter().zip(args.iter()) {
+            let value = self.evaluate_expression(arg);
+            variable_stack.insert(param.clone(), value);
+        }
+        self.variable_stack.push(variable_stack);
+
+        let mut return_value = Value::new(ValueType::Integer(0));
+        for statement in body.into_iter() {
+            match statement.statement_type {
+                ast::StatementType::Return(ref expr) => match expr {
+                    Some(expr) => {
+                        return_value = self.evaluate_expression(expr);
+                    }
+                    None => {
+                        return_value = Value::new(ValueType::Integer(0));
+                    }
+                },
+                _ => self.evaluate_statement(&statement),
+            }
+        }
+
+        self.variable_stack.pop();
+
+        return_value
     }
 }
