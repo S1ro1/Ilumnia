@@ -9,7 +9,9 @@ use compiler::{
 };
 
 fn main() -> Result<(), ParseError> {
-    let input = std::fs::read_to_string("test.ilu").unwrap();
+    let args = std::env::args().collect::<Vec<String>>();
+
+    let input = std::fs::read_to_string(&args[1]).unwrap();
     let mut lexer = Lexer::new(&input);
 
     let tokens = lexer.lex();

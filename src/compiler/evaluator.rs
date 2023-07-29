@@ -14,7 +14,6 @@ pub struct Value {
 pub enum ValueType {
     Integer(i64),
     String(String),
-    Bool(bool),
 }
 
 impl Value {
@@ -66,7 +65,6 @@ impl Evaluator {
                 match value.value_type {
                     ValueType::Integer(value) => println!("{}", value),
                     ValueType::String(value) => println!("{}", value),
-                    _ => panic!("Cannot print value"),
                 }
             }
             _ => {}
