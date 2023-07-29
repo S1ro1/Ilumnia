@@ -1,5 +1,7 @@
-func add(x, y) {
-    return x + 7;
+let y = 31;
+let z = 25;
+if (y > 25) {
+    print(y);
+} else {
+    print(z);
 }
-
-print(add(3, 4));

@@ -14,11 +14,20 @@ pub struct Value {
 pub enum ValueType {
     Integer(i64),
     String(String),
+    Bool(bool),
 }
 
 impl Value {
     pub fn new(value_type: ValueType) -> Self {
         Self { value_type }
+    }
+
+    pub fn into_bool(&self) -> bool {
+        match &self.value_type {
+            ValueType::Bool(value) => value.clone(),
+            ValueType::Integer(value) => value.clone() != 0,
+            ValueType::String(value) => !value.is_empty(),
+        }
     }
 }
 
@@ -65,10 +74,33 @@ impl Evaluator {
                 match value.value_type {
                     ValueType::Integer(value) => println!("{}", value),
                     ValueType::String(value) => println!("{}", value),
+                    ValueType::Bool(value) => println!("{}", value),
                 }
             }
             ast::StatementType::FunctionDeclaration(name, _, _) => {
                 self.functions.insert(name.clone(), statement.clone());
+            }
+            ast::StatementType::Return(_) => {}
+            ast::StatementType::IfBlock(ref expr, body) => {
+                let value = self.evaluate_expression(expr).into_bool();
+                if value {
+                    for statement in body.clone().into_iter() {
+                        self.evaluate_statement(&statement);
+                    }
+                }
+            }
+            ast::StatementType::IfElseBlock(expr, if_body, else_body) => {
+                let value = self.evaluate_expression(expr).into_bool();
+
+                if value {
+                    for statement in if_body.clone().into_iter() {
+                        self.evaluate_statement(&statement);
+                    }
+                } else {
+                    for statement in else_body.clone().into_iter() {
+                        self.evaluate_statement(&statement);
+                    }
+                }
             }
             _ => {}
         }
@@ -114,6 +146,18 @@ impl Evaluator {
                     TokenType::Slash => match (left.value_type, right.value_type) {
                         (ValueType::Integer(left), ValueType::Integer(right)) => {
                             Value::new(ValueType::Integer(left / right))
+                        }
+                        _ => panic!("hihi"),
+                    },
+                    TokenType::Gt => match (left.value_type, right.value_type) {
+                        (ValueType::Integer(left), ValueType::Integer(right)) => {
+                            Value::new(ValueType::Bool(left > right))
+                        }
+                        _ => panic!("hihi"),
+                    },
+                    TokenType::Lt => match (left.value_type, right.value_type) {
+                        (ValueType::Integer(left), ValueType::Integer(right)) => {
+                            Value::new(ValueType::Bool(left < right))
                         }
                         _ => panic!("hihi"),
                     },
