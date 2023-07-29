@@ -6,4 +6,4 @@ StatementList -> .
 Statement -> Assign ; .
 Statement -> Exp ; .
 
-Assign -> 'let' value '=' value
+Assign -> 'let' idetif '=' Exp ;
