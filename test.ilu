@@ -1,3 +1,0 @@
-let x = foo(x, y + z) + 3;
-
-x = foo(x, y);

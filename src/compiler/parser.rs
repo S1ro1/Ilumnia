@@ -34,6 +34,7 @@ impl fmt::Display for HmmgeError {
 pub struct Parser {
     tokens: Vec<Token>,
     position: usize,
+    in_function: bool,
 }
 
 impl Parser {
@@ -41,6 +42,7 @@ impl Parser {
         Parser {
             tokens,
             position: 0,
+            in_function: false,
         }
     }
 }
@@ -282,7 +284,9 @@ impl Parser {
                 self.advance_with_type(TokenType::LParen)?;
 
                 let params = self.parse_function_params()?;
+                self.in_function = true;
                 let block = self.parse_block()?;
+                self.in_function = false;
 
                 return Ok(ast::Statement {
                     statement_type: ast::StatementType::FunctionDeclaration(
@@ -293,6 +297,9 @@ impl Parser {
                 });
             }
             TokenType::Return => {
+                if !self.in_function {
+                    return Err(ParseError::new(TokenType::Invalid, TokenType::Invalid));
+                }
                 self.advance_with_type(TokenType::Return)?;
 
                 if self.current_token().token_type == TokenType::Semicolon {
