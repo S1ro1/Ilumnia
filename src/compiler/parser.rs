@@ -351,12 +351,8 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<(), ParseError> {
-        let program = self.parse_program()?;
-
-        dbg!(program);
-
-        Ok(())
+    pub fn parse(&mut self) -> Result<ast::Program, ParseError> {
+        self.parse_program()
     }
 
     fn advance_with_type(&mut self, token_type: TokenType) -> Result<Token, ParseError> {

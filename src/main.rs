@@ -3,6 +3,7 @@ mod error;
 mod compiler;
 
 use compiler::{
+    evaluator::Evaluator,
     lexer::Lexer,
     parser::{ParseError, Parser},
 };
@@ -14,5 +15,11 @@ fn main() -> Result<(), ParseError> {
     let tokens = lexer.lex();
 
     let mut parser = Parser::new(tokens);
-    parser.parse()
+    let program = parser.parse()?;
+
+    let mut evaluator = Evaluator::new(program);
+
+    evaluator.evaluate();
+
+    Ok(())
 }

@@ -5,12 +5,12 @@ pub struct Program {
     pub statements: Vec<Statement>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Statement {
     pub statement_type: StatementType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StatementType {
     Declaration(Declaration),
     FunctionCall(String, Box<Vec<Expression>>),
@@ -21,19 +21,19 @@ pub enum StatementType {
     Return(Option<Box<Expression>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Declaration {
     pub identif: String,
     pub value: Expression,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Assignment {
     pub identif: String,
     pub value: Expression,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpressionType {
     Literal(String),
     Variable(String),
@@ -42,7 +42,7 @@ pub enum ExpressionType {
     FunctionCall(String, Box<Vec<Expression>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expression {
     pub expression_type: ExpressionType,
 }
