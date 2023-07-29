@@ -29,6 +29,8 @@ impl<'a> Lexer<'a> {
     fn parse_keyword(&self) -> TokenType {
         match self.tmp_buffer.as_str() {
             "let" => TokenType::Let,
+            "if" => TokenType::If,
+            "else" => TokenType::Else,
             _ => TokenType::Identif,
         }
     }
@@ -96,12 +98,16 @@ impl<'a> Lexer<'a> {
                 'a'..='z' | 'A'..='Z' => self.parse_identif(),
                 ')' => Token::new(TokenType::RParen, current_char.to_string()),
                 '(' => Token::new(TokenType::LParen, current_char.to_string()),
+                '{' => Token::new(TokenType::LBrace, current_char.to_string()),
+                '}' => Token::new(TokenType::RBrace, current_char.to_string()),
                 '=' => Token::new(TokenType::Assign, current_char.to_string()),
                 ';' => Token::new(TokenType::Semicolon, current_char.to_string()),
                 '+' => Token::new(TokenType::Plus, current_char.to_string()),
                 '-' => Token::new(TokenType::Minus, current_char.to_string()),
                 '*' => Token::new(TokenType::Asterisk, current_char.to_string()),
                 '/' => Token::new(TokenType::Slash, current_char.to_string()),
+                '>' => Token::new(TokenType::Gt, current_char.to_string()),
+                '<' => Token::new(TokenType::Lt, current_char.to_string()),
                 _ => {
                     self.position += 1;
                     continue;

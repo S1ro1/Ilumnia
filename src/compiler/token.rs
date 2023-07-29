@@ -5,13 +5,15 @@ pub enum TokenType {
     Number,
     // keywords
     Let,
+    If,
+    Else,
     // identif
     Identif,
     // symbols
     RParen,
     LParen,
     RBrace,
-    Lbrace,
+    LBrace,
     Semicolon,
     Assign,
     // operators
@@ -19,6 +21,8 @@ pub enum TokenType {
     Plus,
     Asterisk,
     Slash,
+    Gt,
+    Lt,
     //
     EOF,
     Invalid,

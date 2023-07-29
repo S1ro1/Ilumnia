@@ -34,7 +34,6 @@ impl fmt::Display for HmmgeError {
 pub struct Parser {
     tokens: Vec<Token>,
     position: usize,
-    precedence: usize,
 }
 
 impl Parser {
@@ -42,57 +41,11 @@ impl Parser {
         Parser {
             tokens,
             position: 0,
-            precedence: 0,
         }
     }
 }
 
 impl Parser {
-    fn peek_token(&self) -> Token {
-        if self.position + 1 >= self.tokens.len() {
-            return Token::new(TokenType::EOF, String::new());
-        }
-        self.tokens[self.position + 1].clone()
-    }
-
-    fn is_operator(&self, token: &Token) -> bool {
-        match token.token_type {
-            TokenType::Plus => true,
-            TokenType::Minus => true,
-            TokenType::Asterisk => true,
-            TokenType::Slash => true,
-            _ => false,
-        }
-    }
-
-    fn is_literal(&self, token: &Token) -> bool {
-        match token.token_type {
-            TokenType::Number => true,
-            TokenType::String => true,
-            _ => false,
-        }
-    }
-
-    fn precedence(&self, token: &Token) -> usize {
-        match token.token_type {
-            TokenType::Plus => 1,
-            TokenType::Minus => 1,
-            TokenType::Asterisk => 2,
-            TokenType::Slash => 2,
-            _ => 0,
-        }
-    }
-
-    fn token_advance(&mut self) -> Token {
-        if self.position >= self.tokens.len() {
-            return Token::new(TokenType::EOF, String::new());
-        }
-
-        let token = self.tokens[self.position].clone();
-        self.position += 1;
-        token
-    }
-
     fn current_token(&self) -> Token {
         if self.position >= self.tokens.len() {
             return Token::new(TokenType::EOF, String::new());
@@ -112,9 +65,9 @@ impl Parser {
                 })
             }
             TokenType::LParen => {
-                self.expect_with_type(TokenType::LParen)?;
+                self.advance_with_type(TokenType::LParen)?;
                 let node = self.parse_expression()?;
-                self.expect_with_type(TokenType::RParen)?;
+                self.advance_with_type(TokenType::RParen)?;
                 return Ok(node);
             }
             TokenType::Plus | TokenType::Minus => {
@@ -145,7 +98,7 @@ impl Parser {
         return Ok(node);
     }
 
-    fn parse_expression(&mut self) -> Result<ast::Expression, ParseError> {
+    fn parse_primary_expression(&mut self) -> Result<ast::Expression, ParseError> {
         let mut node = self.parse_term()?;
 
         while self.current_token().token_type == TokenType::Plus
@@ -163,39 +116,125 @@ impl Parser {
             };
         }
 
-        let _ = self.expect_with_type(TokenType::Semicolon);
+        Ok(node)
+    }
+
+    fn parse_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        let mut node = self.parse_primary_expression()?;
+
+        while self.current_token().token_type == TokenType::Gt
+            || self.current_token().token_type == TokenType::Lt
+        {
+            let tok = self.current_token();
+            self.position += 1;
+
+            node = ast::Expression {
+                expression_type: ExpressionType::Binary(
+                    Box::new(node),
+                    tok,
+                    Box::new(self.parse_primary_expression()?),
+                ),
+            };
+        }
 
         Ok(node)
     }
 
     fn parse_assignment(&mut self) -> Result<ast::Assignment, ParseError> {
-        let _ = self.expect_with_type(TokenType::Let)?;
-        let identif_token = self.expect_with_type(TokenType::Identif)?;
-        let _ = self.expect_with_type(TokenType::Assign)?;
+        let _ = self.advance_with_type(TokenType::Let)?;
+        let identif_token = self.advance_with_type(TokenType::Identif)?;
+        let _ = self.advance_with_type(TokenType::Assign)?;
 
         let expression = self.parse_expression()?;
 
-        Ok(ast::Assignment {
+        let node = Ok(ast::Assignment {
             identif: identif_token.value,
             value: expression,
-        })
+        });
+
+        self.advance_with_type(TokenType::Semicolon)?;
+
+        return node;
+    }
+
+    pub fn parse_program(&mut self) -> Result<ast::Program, ParseError> {
+        let mut statements: Vec<ast::Statement> = Vec::new();
+
+        while self.current_token().token_type != TokenType::EOF {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+        }
+
+        Ok(ast::Program { statements })
+    }
+
+    fn parse_block(&mut self) -> Result<Vec<ast::Statement>, ParseError> {
+        let mut statements: Vec<ast::Statement> = Vec::new();
+        self.advance_with_type(TokenType::LBrace)?;
+
+        while self.current_token().token_type != TokenType::RBrace {
+            let statement = self.parse_statement().unwrap();
+            statements.push(statement);
+        }
+
+        self.advance_with_type(TokenType::RBrace)?;
+
+        Ok(statements)
+    }
+
+    pub fn parse_statement(&mut self) -> Result<ast::Statement, ParseError> {
+        let token = self.current_token();
+
+        match token.token_type {
+            TokenType::Let => {
+                let assignment = self.parse_assignment()?;
+                return Ok(ast::Statement {
+                    statement_type: ast::StatementType::Assignment(assignment),
+                });
+            }
+            TokenType::If => {
+                self.advance_with_type(TokenType::If)?;
+                self.advance_with_type(TokenType::LParen)?; // (
+                let expression = self.parse_expression()?;
+                self.advance_with_type(TokenType::RParen)?; // )
+
+                let statements = self.parse_block()?;
+
+                match self.current_token().token_type {
+                    TokenType::Else => {
+                        self.advance_with_type(TokenType::Else)?;
+                        let else_statements = self.parse_block()?;
+                        return Ok(ast::Statement {
+                            statement_type: ast::StatementType::IfElseBlock(
+                                Box::new(expression),
+                                Box::new(statements),
+                                Box::new(else_statements),
+                            ),
+                        });
+                    }
+                    _ => {
+                        return Ok(ast::Statement {
+                            statement_type: ast::StatementType::IfBlock(
+                                Box::new(expression),
+                                Box::new(statements),
+                            ),
+                        });
+                    }
+                }
+            }
+            _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid)),
+        }
     }
 
     pub fn parse(&mut self) -> Result<(), ParseError> {
-        while self.position < self.tokens.len() {
-            let token = self.current_token();
-            match token.token_type {
-                TokenType::Let => {
-                    dbg!(self.parse_assignment()?);
-                }
-                _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid))?,
-            }
-        }
+        let program = self.parse_program()?;
+
+        dbg!(program);
 
         Ok(())
     }
 
-    fn expect_with_type(&mut self, token_type: TokenType) -> Result<Token, ParseError> {
+    fn advance_with_type(&mut self, token_type: TokenType) -> Result<Token, ParseError> {
         if self.position >= self.tokens.len() {
             return Err(ParseError::new(token_type, TokenType::EOF));
         } else {

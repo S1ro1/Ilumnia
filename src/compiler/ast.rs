@@ -14,6 +14,7 @@ pub struct Statement {
 pub enum StatementType {
     Assignment(Assignment),
     IfBlock(Box<Expression>, Box<Vec<Statement>>),
+    IfElseBlock(Box<Expression>, Box<Vec<Statement>>, Box<Vec<Statement>>),
 }
 
 #[derive(Debug)]
