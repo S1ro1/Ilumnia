@@ -66,9 +66,23 @@ impl Parser {
             }
             TokenType::Identif => {
                 self.position += 1;
-                Ok(ast::Expression {
-                    expression_type: ExpressionType::Variable(token.value),
-                })
+                match self.current_token().token_type {
+                    TokenType::LParen => {
+                        self.position += 1;
+                        let arguments = self.parse_function_arguments()?;
+                        return Ok(ast::Expression {
+                            expression_type: ExpressionType::FunctionCall(
+                                token.value,
+                                Box::new(arguments),
+                            ),
+                        });
+                    }
+                    _ => {
+                        return Ok(ast::Expression {
+                            expression_type: ExpressionType::Variable(token.value),
+                        });
+                    }
+                }
             }
             TokenType::LParen => {
                 self.advance_with_type(TokenType::LParen)?;
@@ -146,14 +160,14 @@ impl Parser {
         Ok(node)
     }
 
-    fn parse_assignment(&mut self) -> Result<ast::Assignment, ParseError> {
+    fn parse_declaration(&mut self) -> Result<ast::Declaration, ParseError> {
         let _ = self.advance_with_type(TokenType::Let)?;
         let identif_token = self.advance_with_type(TokenType::Identif)?;
         let _ = self.advance_with_type(TokenType::Assign)?;
 
         let expression = self.parse_expression()?;
 
-        let node = Ok(ast::Assignment {
+        let node = Ok(ast::Declaration {
             identif: identif_token.value,
             value: expression,
         });
@@ -205,14 +219,31 @@ impl Parser {
         Ok(params)
     }
 
+    fn parse_function_arguments(&mut self) -> Result<Vec<Expression>, ParseError> {
+        let mut arguments = Vec::new();
+
+        if self.current_token().token_type != TokenType::RParen {
+            arguments.push(self.parse_expression()?);
+        }
+
+        while self.current_token().token_type != TokenType::RParen {
+            self.advance_with_type(TokenType::Comma)?;
+            arguments.push(self.parse_expression()?);
+        }
+
+        self.advance_with_type(TokenType::RParen)?;
+
+        Ok(arguments)
+    }
+
     pub fn parse_statement(&mut self) -> Result<ast::Statement, ParseError> {
         let token = self.current_token();
 
         match token.token_type {
             TokenType::Let => {
-                let assignment = self.parse_assignment()?;
+                let assignment = self.parse_declaration()?;
                 return Ok(ast::Statement {
-                    statement_type: ast::StatementType::Assignment(assignment),
+                    statement_type: ast::StatementType::Declaration(assignment),
                 });
             }
             TokenType::If => {
@@ -275,6 +306,38 @@ impl Parser {
                     return Ok(ast::Statement {
                         statement_type: ast::StatementType::Return(Some(Box::new(expr))),
                     });
+                }
+            }
+            TokenType::Identif => {
+                let identif = self.advance_with_type(TokenType::Identif)?;
+                let token = self.current_token();
+
+                match token.token_type {
+                    TokenType::LParen => {
+                        self.advance_with_type(TokenType::LParen)?;
+                        let arguments = self.parse_function_arguments()?;
+                        self.advance_with_type(TokenType::Semicolon)?;
+
+                        return Ok(ast::Statement {
+                            statement_type: ast::StatementType::FunctionCall(
+                                identif.value,
+                                Box::new(arguments),
+                            ),
+                        });
+                    }
+                    TokenType::Assign => {
+                        self.advance_with_type(TokenType::Assign)?;
+                        let expr = self.parse_expression()?;
+                        self.advance_with_type(TokenType::Semicolon)?;
+
+                        return Ok(ast::Statement {
+                            statement_type: ast::StatementType::Assignment(ast::Assignment {
+                                identif: identif.value,
+                                value: expr,
+                            }),
+                        });
+                    }
+                    _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid)),
                 }
             }
             _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid)),

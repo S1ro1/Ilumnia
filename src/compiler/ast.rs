@@ -12,11 +12,19 @@ pub struct Statement {
 
 #[derive(Debug)]
 pub enum StatementType {
+    Declaration(Declaration),
+    FunctionCall(String, Box<Vec<Expression>>),
     Assignment(Assignment),
     IfBlock(Box<Expression>, Box<Vec<Statement>>),
     IfElseBlock(Box<Expression>, Box<Vec<Statement>>, Box<Vec<Statement>>),
     FunctionDeclaration(String, Vec<String>, Box<Vec<Statement>>),
     Return(Option<Box<Expression>>),
+}
+
+#[derive(Debug)]
+pub struct Declaration {
+    pub identif: String,
+    pub value: Expression,
 }
 
 #[derive(Debug)]
@@ -31,6 +39,7 @@ pub enum ExpressionType {
     Variable(String),
     Binary(Box<Expression>, Token, Box<Expression>),
     Unary(Token, Box<Expression>),
+    FunctionCall(String, Box<Vec<Expression>>),
 }
 
 #[derive(Debug)]
