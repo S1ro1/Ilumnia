@@ -19,18 +19,13 @@ impl<'a> Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    fn peek(&self) -> Option<char> {
-        if self.position + 1 >= self.source.len() {
-            return None;
-        }
-        return self.source.chars().nth(self.position + 1);
-    }
-
     fn parse_keyword(&self) -> TokenType {
         match self.tmp_buffer.as_str() {
             "let" => TokenType::Let,
             "if" => TokenType::If,
             "else" => TokenType::Else,
+            "func" => TokenType::Func,
+            "return" => TokenType::Return,
             _ => TokenType::Identif,
         }
     }
@@ -76,6 +71,10 @@ impl<'a> Lexer<'a> {
             self.tmp_buffer.push(current_char);
             self.position += 1;
             current_char = self.source.chars().nth(self.position).unwrap();
+
+            if !current_char.is_alphanumeric() {
+                self.position -= 1;
+            }
         }
 
         let token_type = self.parse_keyword();
@@ -108,6 +107,7 @@ impl<'a> Lexer<'a> {
                 '/' => Token::new(TokenType::Slash, current_char.to_string()),
                 '>' => Token::new(TokenType::Gt, current_char.to_string()),
                 '<' => Token::new(TokenType::Lt, current_char.to_string()),
+                ',' => Token::new(TokenType::Comma, current_char.to_string()),
                 _ => {
                     self.position += 1;
                     continue;

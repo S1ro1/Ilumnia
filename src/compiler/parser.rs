@@ -64,6 +64,12 @@ impl Parser {
                     expression_type: ExpressionType::Literal(token.value),
                 })
             }
+            TokenType::Identif => {
+                self.position += 1;
+                Ok(ast::Expression {
+                    expression_type: ExpressionType::Variable(token.value),
+                })
+            }
             TokenType::LParen => {
                 self.advance_with_type(TokenType::LParen)?;
                 let node = self.parse_expression()?;
@@ -182,6 +188,23 @@ impl Parser {
         Ok(statements)
     }
 
+    fn parse_function_params(&mut self) -> Result<Vec<String>, ParseError> {
+        let mut params = Vec::new();
+
+        if self.current_token().token_type != TokenType::RParen {
+            params.push(self.advance_with_type(TokenType::Identif)?.value);
+        }
+
+        while self.current_token().token_type != TokenType::RParen {
+            self.advance_with_type(TokenType::Comma)?;
+            params.push(self.advance_with_type(TokenType::Identif)?.value);
+        }
+
+        self.advance_with_type(TokenType::RParen)?;
+
+        Ok(params)
+    }
+
     pub fn parse_statement(&mut self) -> Result<ast::Statement, ParseError> {
         let token = self.current_token();
 
@@ -220,6 +243,38 @@ impl Parser {
                             ),
                         });
                     }
+                }
+            }
+            TokenType::Func => {
+                self.advance_with_type(TokenType::Func)?;
+                let identif = self.advance_with_type(TokenType::Identif)?;
+                self.advance_with_type(TokenType::LParen)?;
+
+                let params = self.parse_function_params()?;
+                let block = self.parse_block()?;
+
+                return Ok(ast::Statement {
+                    statement_type: ast::StatementType::FunctionDeclaration(
+                        identif.value,
+                        params,
+                        Box::new(block),
+                    ),
+                });
+            }
+            TokenType::Return => {
+                self.advance_with_type(TokenType::Return)?;
+
+                if self.current_token().token_type == TokenType::Semicolon {
+                    self.advance_with_type(TokenType::Semicolon)?;
+                    return Ok(ast::Statement {
+                        statement_type: ast::StatementType::Return(None),
+                    });
+                } else {
+                    let expr = self.parse_expression()?;
+                    self.advance_with_type(TokenType::Semicolon)?;
+                    return Ok(ast::Statement {
+                        statement_type: ast::StatementType::Return(Some(Box::new(expr))),
+                    });
                 }
             }
             _ => Err(ParseError::new(TokenType::Invalid, TokenType::Invalid)),

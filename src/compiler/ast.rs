@@ -15,6 +15,8 @@ pub enum StatementType {
     Assignment(Assignment),
     IfBlock(Box<Expression>, Box<Vec<Statement>>),
     IfElseBlock(Box<Expression>, Box<Vec<Statement>>, Box<Vec<Statement>>),
+    FunctionDeclaration(String, Vec<String>, Box<Vec<Statement>>),
+    Return(Option<Box<Expression>>),
 }
 
 #[derive(Debug)]
@@ -26,6 +28,7 @@ pub struct Assignment {
 #[derive(Debug)]
 pub enum ExpressionType {
     Literal(String),
+    Variable(String),
     Binary(Box<Expression>, Token, Box<Expression>),
     Unary(Token, Box<Expression>),
 }

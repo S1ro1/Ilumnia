@@ -6,5 +6,8 @@ StatementList -> .
 Statement -> Assign ; .
 Statement -> Exp ; .
 Statement -> If (Exp) { StatementList }
+Statement -> func (param, additional_params) {
+    StatementList
+}
 
 Assign -> 'let' idetif '=' Exp ;

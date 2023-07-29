@@ -7,6 +7,8 @@ pub enum TokenType {
     Let,
     If,
     Else,
+    Func,
+    Return,
     // identif
     Identif,
     // symbols
@@ -16,6 +18,7 @@ pub enum TokenType {
     LBrace,
     Semicolon,
     Assign,
+    Comma,
     // operators
     Minus,
     Plus,
