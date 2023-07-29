@@ -19,6 +19,7 @@ pub enum StatementType {
     IfElseBlock(Box<Expression>, Box<Vec<Statement>>, Box<Vec<Statement>>),
     FunctionDeclaration(String, Vec<String>, Box<Vec<Statement>>),
     Return(Option<Box<Expression>>),
+    Print(Box<Expression>),
 }
 
 #[derive(Debug, Clone)]

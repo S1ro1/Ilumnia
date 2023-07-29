@@ -26,6 +26,7 @@ impl<'a> Lexer<'a> {
             "else" => TokenType::Else,
             "func" => TokenType::Func,
             "return" => TokenType::Return,
+            "print" => TokenType::Print,
             _ => TokenType::Identif,
         }
     }

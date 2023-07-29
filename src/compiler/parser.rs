@@ -242,6 +242,15 @@ impl Parser {
         let token = self.current_token();
 
         match token.token_type {
+            TokenType::Print => {
+                self.advance_with_type(TokenType::Print)?;
+                let expr = self.parse_expression()?;
+                self.advance_with_type(TokenType::Semicolon)?;
+
+                return Ok(ast::Statement {
+                    statement_type: ast::StatementType::Print(Box::new(expr)),
+                });
+            }
             TokenType::Let => {
                 let assignment = self.parse_declaration()?;
                 return Ok(ast::Statement {

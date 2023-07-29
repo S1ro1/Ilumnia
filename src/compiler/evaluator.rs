@@ -43,7 +43,6 @@ impl Evaluator {
         for statement in statements {
             self.evaluate_statement(&statement);
         }
-        dbg!(&self.variable_stack);
     }
 
     fn evaluate_statement(&mut self, statement: &Statement) {
@@ -61,6 +60,14 @@ impl Evaluator {
                     .last_mut()
                     .unwrap()
                     .insert(assignment.identif.clone(), value);
+            }
+            ast::StatementType::Print(ref expr) => {
+                let value = self.evaluate_expression(expr);
+                match value.value_type {
+                    ValueType::Integer(value) => println!("{}", value),
+                    ValueType::String(value) => println!("{}", value),
+                    _ => panic!("Cannot print value"),
+                }
             }
             _ => {}
         }

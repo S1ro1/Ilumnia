@@ -9,6 +9,7 @@ pub enum TokenType {
     Else,
     Func,
     Return,
+    Print,
     // identif
     Identif,
     // symbols
